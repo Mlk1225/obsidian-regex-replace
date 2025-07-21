@@ -20,6 +20,8 @@ interface RfrPluginSettings {
 	processLineBreak: boolean;
 	processTab: boolean;
 	prefillFind: boolean;
+	history?: Array<{ find: string, replace: string }>;
+	favorites?: Array<{ find: string, replace: string }>;
 }
 
 const DEFAULT_SETTINGS: RfrPluginSettings = {
@@ -30,13 +32,15 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 	caseInsensitive: false,
 	processLineBreak: false,
 	processTab: false,
-	prefillFind: false
+	prefillFind: false,
+	history: [],
+	favorites: []
 }
 
 // logThreshold: 0 ... only error messages
 //               9 ... verbose output
 const logThreshold = 9;
-const logger = (logString: string, logLevel=0): void => {if (logLevel <= logThreshold) console.log ('RegexFiRe: ' + logString)};
+const logger = (logString: string, logLevel = 0): void => { if (logLevel <= logThreshold) console.log('RegexFiRe: ' + logString) };
 
 export default class RegexFindReplacePlugin extends Plugin {
 	settings: RfrPluginSettings;
@@ -103,7 +107,7 @@ class FindAndReplaceModal extends Modal {
 
 		logger('No text selected?: ' + noSelection, 9);
 
-		const addTextComponent = (label: string, placeholder: string, postfix=''): [TextComponent, HTMLDivElement] => {
+		const addTextComponent = (label: string, placeholder: string, postfix = ''): [TextComponent, HTMLDivElement] => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
 
@@ -132,17 +136,17 @@ class FindAndReplaceModal extends Modal {
 		const addToggleComponent = (label: string, tooltip: string, hide = false): ToggleComponent => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
-	
+
 			const targetEl = document.createElement(divClass);
 			targetEl.addClass(rowClass);
 
 			const component = new ToggleComponent(targetEl);
 			component.setTooltip(tooltip);
-	
+
 			const labelEl = document.createElement(divClass);
 			labelEl.addClass('check-label');
 			labelEl.setText(label);
-	
+
 			containerEl.appendChild(labelEl);
 			containerEl.appendChild(targetEl);
 			if (!hide) contentEl.appendChild(containerEl);
@@ -158,9 +162,9 @@ class FindAndReplaceModal extends Modal {
 
 		// Create and show regular expression toggle switch
 		const regToggleComponent = addToggleComponent('Use regular expressions', 'If enabled, regular expressions in the find field are processed as such, and regex groups might be addressed in the replace field');
-		
+
 		// Update regex-flags label if regular expressions are enabled or disabled
-		regToggleComponent.onChange( regNew => {
+		regToggleComponent.onChange(regNew => {
 			if (regNew) {
 				findRegexFlags.setText('/' + regexFlags);
 			}
@@ -186,7 +190,7 @@ class FindAndReplaceModal extends Modal {
 
 		const submitButtonComponent = new ButtonComponent(submitButtonTarget);
 		const cancelButtonComponent = new ButtonComponent(cancelButtonTarget);
-		
+
 		cancelButtonComponent.setButtonText('Cancel');
 		cancelButtonComponent.onClick(() => {
 			logger('Action cancelled.', 8);
@@ -195,7 +199,7 @@ class FindAndReplaceModal extends Modal {
 
 		submitButtonComponent.setButtonText('Replace All');
 		submitButtonComponent.setCta();
-		submitButtonComponent.onClick(() => {
+		submitButtonComponent.onClick(async () => {
 			let resultString = 'No match';
 			let scope = '';
 			const searchString = findInputComponent.getValue();
@@ -205,6 +209,18 @@ class FindAndReplaceModal extends Modal {
 			if (searchString === '') {
 				new Notice('Nothing to search for!');
 				return;
+			}
+
+			// Save to History
+			if (searchString) {
+				const history = this.settings.history ?? [];
+				const exists = history.find(h => h.find === searchString && h.replace === replaceString);
+				if (!exists) {
+					history.unshift({ find: searchString, replace: replaceString });
+					if (history.length > 20) history.pop();
+					this.settings.history = history;
+					await this.plugin.saveData(this.settings);
+				}
 			}
 
 			// Replace line breaks in find-field if option is enabled
@@ -224,24 +240,24 @@ class FindAndReplaceModal extends Modal {
 			}
 
 			// Check if regular expressions should be used
-			if(regToggleComponent.getValue()) {
+			if (regToggleComponent.getValue()) {
 				logger('USING regex with flags: ' + regexFlags, 8);
 
 				const searchRegex = new RegExp(searchString, regexFlags);
-				if(!selToggleComponent.getValue()) {
+				if (!selToggleComponent.getValue()) {
 					logger('   SCOPE: Full document', 9);
 					const documentText = editor.getValue();
 					const rresult = documentText.match(searchRegex);
 					if (rresult) {
 						editor.setValue(documentText.replace(searchRegex, replaceString));
-						resultString = `Made ${rresult.length} replacement(s) in document`;			
+						resultString = `Made ${rresult.length} replacement(s) in document`;
 					}
 				}
 				else {
 					logger('   SCOPE: Selection', 9);
 					const rresult = selectedText.match(searchRegex);
 					if (rresult) {
-						editor.replaceSelection(selectedText.replace(searchRegex, replaceString));	
+						editor.replaceSelection(selectedText.replace(searchRegex, replaceString));
 						resultString = `Made ${rresult.length} replacement(s) in selection`;
 					}
 				}
@@ -249,7 +265,7 @@ class FindAndReplaceModal extends Modal {
 			else {
 				logger('NOT using regex', 8);
 				let nrOfHits = 0;
-				if(!selToggleComponent.getValue()) {
+				if (!selToggleComponent.getValue()) {
 					logger('   SCOPE: Full document', 9);
 					scope = 'selection'
 					const documentText = editor.getValue();
@@ -265,8 +281,8 @@ class FindAndReplaceModal extends Modal {
 					editor.replaceSelection(selectedSplit.join(replaceString));
 				}
 				resultString = `Made ${nrOfHits} replacement(s) in ${scope}`;
-			} 		
-			
+			}
+
 			// Saving settings (find/replace text and toggle switch states)
 			this.settings.findText = searchString;
 			this.settings.replaceText = replaceString;
@@ -275,17 +291,17 @@ class FindAndReplaceModal extends Modal {
 			this.plugin.saveData(this.settings);
 
 			this.close();
-			new Notice(resultString);					
+			new Notice(resultString);
 		});
 
 		// Apply settings
 		regToggleComponent.setValue(this.settings.useRegEx);
 		selToggleComponent.setValue(this.settings.selOnly);
 		replaceWithInputComponent.setValue(this.settings.replaceText);
-		
+
 		// Check if the prefill find option is enabled and the selection does not contain linebreaks
 		if (this.settings.prefillFind && editor.getSelection().indexOf('\n') < 0 && !noSelection) {
-			logger('Found selection without linebreaks and option is enabled -> fill',9);
+			logger('Found selection without linebreaks and option is enabled -> fill', 9);
 			findInputComponent.setValue(editor.getSelection());
 			selToggleComponent.setValue(false);
 		}
@@ -293,7 +309,7 @@ class FindAndReplaceModal extends Modal {
 			logger('Restore find text', 9);
 			findInputComponent.setValue(this.settings.findText);
 		}
-		
+
 		// Add button row to dialog
 		buttonContainerEl.appendChild(submitButtonTarget);
 		buttonContainerEl.appendChild(cancelButtonTarget);
@@ -301,8 +317,95 @@ class FindAndReplaceModal extends Modal {
 
 		// If no text is selected, disable selection-toggle-switch
 		if (noSelection) selToggleComponent.setValue(false);
+
+		// Add Container for history record and favorite record
+		const mainContainer = document.createElement('div');
+		mainContainer.style.display = 'flex';
+
+		const leftPanel = document.createElement('div');
+		leftPanel.style.width = '25%';
+		leftPanel.style.marginRight = '8px';
+		leftPanel.style.overflowY = 'auto';
+
+		const centerPanel = document.createElement('div');
+		centerPanel.style.width = '50%';
+
+		const rightPanel = document.createElement('div');
+		rightPanel.style.width = '25%';
+		rightPanel.style.marginLeft = '8px';
+		rightPanel.style.overflowY = 'auto';
+
+		// Render history recode
+		const historyTitle = document.createElement('div');
+		historyTitle.innerText = 'History';
+		leftPanel.appendChild(historyTitle);
+
+		(this.settings.history ?? []).slice(0, 20).forEach((item, idx) => {
+			const entry = document.createElement('div');
+			entry.style.display = 'flex';
+			entry.style.alignItems = 'center';
+			entry.style.marginBottom = '4px';
+			entry.innerText = `${item.find} → ${item.replace}`;
+			const useBtn = document.createElement('button');
+			useBtn.innerText = 'Use it';
+			useBtn.onclick = () => {
+				findInputComponent.setValue(item.find);
+				replaceWithInputComponent.setValue(item.replace);
+			};
+			entry.appendChild(useBtn);
+			leftPanel.appendChild(entry);
+		});
+
+		// Render favorite recode
+		const favTitle = document.createElement('div');
+		favTitle.innerText = 'Favorite';
+		rightPanel.appendChild(favTitle);
+
+		(this.settings.favorites ?? []).slice(0, 20).forEach((item, idx) => {
+			const entry = document.createElement('div');
+			entry.style.display = 'flex';
+			entry.style.alignItems = 'center';
+			entry.style.marginBottom = '4px';
+			entry.innerText = `${item.find} → ${item.replace}`;
+			const useBtn = document.createElement('button');
+			useBtn.innerText = 'Use it';
+			useBtn.onclick = () => {
+				findInputComponent.setValue(item.find);
+				replaceWithInputComponent.setValue(item.replace);
+			};
+			entry.appendChild(useBtn);
+			rightPanel.appendChild(entry);
+		});
+
+		// Add "Add to History" button
+		const favBtn = document.createElement('button');
+		favBtn.innerText = 'Add to History';
+		favBtn.onclick = async () => {
+			const find = findInputComponent.getValue();
+			const replace = replaceWithInputComponent.getValue();
+			if (!find) return;
+			const favs = this.settings.favorites ?? [];
+			if (!favs.find(f => f.find === find && f.replace === replace)) {
+				favs.unshift({ find, replace });
+				if (favs.length > 20) favs.pop();
+				this.settings.favorites = favs;
+				await this.plugin.saveData(this.settings);
+				new Notice('Added to History');
+			}
+		};
+		centerPanel.appendChild(favBtn);
+
+		// Recognize ui
+		centerPanel.appendChild(contentEl);
+
+		mainContainer.appendChild(leftPanel);
+		mainContainer.appendChild(centerPanel);
+		mainContainer.appendChild(rightPanel);
+
+		modalEl.empty();
+		modalEl.appendChild(mainContainer);
 	}
-	
+
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
@@ -318,10 +421,10 @@ class RegexFindReplaceSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl('h4', {text: 'Regular Expression Settings'});
+		containerEl.createEl('h4', { text: 'Regular Expression Settings' });
 
 		new Setting(containerEl)
 			.setName('Case Insensitive')
@@ -334,7 +437,7 @@ class RegexFindReplaceSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		containerEl.createEl('h4', {text: 'General Settings'});
+		containerEl.createEl('h4', { text: 'General Settings' });
 
 
 		new Setting(containerEl)
@@ -361,3 +464,4 @@ class RegexFindReplaceSettingTab extends PluginSettingTab {
 				}));
 	}
 }
+
