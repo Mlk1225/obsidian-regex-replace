@@ -10,7 +10,7 @@ div.modal.find-replace-modal {
 	display: flex;
 	align-items: center;
 	width: 100%;
-	margin-top: 8px;
+	margin: 16px 0px;
 }
 
 
@@ -18,6 +18,7 @@ div.modal.find-replace-modal {
 	display: flex;
 	justify-content: flex-end;
 	height: 100%;
+	font-weight: bold;
 }
 
 
@@ -26,7 +27,7 @@ div.modal.find-replace-modal {
 	height: 100%;
 	margin-left: 8px;
 	justify-content: flex-end;
-	color: gray;
+	color: var(--color-base-60);
 }
 
 
@@ -58,21 +59,36 @@ div.modal.find-replace-modal {
 	margin-top: 16px;
 }
 
-
 .find-replace-modal .center-panel {
 	width: 50%;
+}
+
+.find-replace-modal .input-wrapper textarea {
+	width: 100%;
+	resize: none;
+	min-height: 120px;
+	border: 2px dotted var(--interactive-accent);
+	padding: 3px;
+	font-size: 0.9em;
+	font-family: 'Source Code Pro', var(--font-text);
 }
 
 .find-replace-modal .left-panel {
 	width: 30%;
 	margin-right: 10px;
-	overflow-y: auto;
+	overflow-y: scroll;
 }
 
 .find-replace-modal .right-panel {
 	width: 30%;
 	margin-left: 10px;
-	overflow-y: auto;
+	overflow-y: scroll;
+}
+
+.left-panel::-webkit-scrollbar,
+.right-panel::-webkit-scrollbar {
+	/* 隐藏滚动条 */
+	display: none;
 }
 
 .find-replace-modal .panel-title {
@@ -86,12 +102,13 @@ div.modal.find-replace-modal {
 	align-items: center;
 	margin-bottom: 4px;
 	padding: 3px;
-	border: 1px solid #8A5CF5;
-	border-radius: 10px;
-	font-size: 0.9em;
+	border: 2px solid var(--color-base-30);
+	border-radius: var(--modal-radius);
+	font-size: 1em;
+	font-family: 'Source Code Pro', var(--font-text);
 }
 
 .find-replace-modal .item:hover {
-	background-color: #8A5CF5;
-	border-radius: 10px
+	background-color: var(--color-base-30);
+	border-radius: var(--modal-radius)
 }

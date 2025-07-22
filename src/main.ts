@@ -6,6 +6,7 @@ import {
 	Notice,
 	Plugin,
 	TextComponent,
+	TextAreaComponent,
 	ToggleComponent,
 	PluginSettingTab,
 	Setting
@@ -36,7 +37,6 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 	history: [],
 	favorites: []
 }
-
 
 // logThreshold: 0 ... only error messages
 //               9 ... verbose output
@@ -125,7 +125,7 @@ class FindAndReplaceModal extends Modal {
 			containerEl.appendChild(targetEl);
 			containerEl.appendChild(labelEl2);
 
-			const component = new TextComponent(targetEl);
+			const component = new TextAreaComponent(targetEl);
 			component.setPlaceholder(placeholder);
 
 			contentEl.append(containerEl);
@@ -332,7 +332,7 @@ class FindAndReplaceModal extends Modal {
 
 		// Add "Add to Favorite" button
 		const favBtn = document.createElement('button');
-		favBtn.innerText = 'Add to Favorite';
+		favBtn.innerText = 'Add Current to Favorite';
 		centerPanel.appendChild(favBtn);
 
 		centerPanel.appendChild(contentEl);
@@ -343,6 +343,7 @@ class FindAndReplaceModal extends Modal {
 
 		// Left panel, render history record
 		const historyTitle = document.createElement('div');
+		historyTitle.addClass("panel-title")
 		historyTitle.innerText = 'History';
 		leftPanel.appendChild(historyTitle);
 
