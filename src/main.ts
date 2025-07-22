@@ -37,6 +37,7 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 	favorites: []
 }
 
+
 // logThreshold: 0 ... only error messages
 //               9 ... verbose output
 const logThreshold = 9;
@@ -50,7 +51,6 @@ export default class RegexFindReplacePlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addSettingTab(new RegexFindReplaceSettingTab(this.app, this));
-
 
 		this.addCommand({
 			id: 'obsidian-regex-replace',
@@ -74,7 +74,6 @@ export default class RegexFindReplacePlugin extends Plugin {
 		logger('   processLineBreak: ' + this.settings.processLineBreak, 6);
 
 	}
-
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
@@ -95,7 +94,6 @@ class FindAndReplaceModal extends Modal {
 
 	onOpen() {
 		const { contentEl, titleEl, editor, modalEl } = this;
-
 		modalEl.addClass('find-replace-modal');
 		titleEl.setText('Regex Find/Replace');
 
@@ -107,6 +105,7 @@ class FindAndReplaceModal extends Modal {
 
 		logger('No text selected?: ' + noSelection, 9);
 
+		// Center panel
 		const addTextComponent = (label: string, placeholder: string, postfix = ''): [TextComponent, HTMLDivElement] => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
@@ -323,63 +322,59 @@ class FindAndReplaceModal extends Modal {
 		mainContainer.style.display = 'flex';
 
 		const leftPanel = document.createElement('div');
-		leftPanel.style.width = '25%';
-		leftPanel.style.marginRight = '8px';
-		leftPanel.style.overflowY = 'auto';
+		leftPanel.addClass("left-panel")
 
 		const centerPanel = document.createElement('div');
-		centerPanel.style.width = '50%';
+		centerPanel.addClass("center-panel")
 
 		const rightPanel = document.createElement('div');
-		rightPanel.style.width = '25%';
-		rightPanel.style.marginLeft = '8px';
-		rightPanel.style.overflowY = 'auto';
+		rightPanel.addClass("right-panel")
 
-		// Render history recode
+		// Add "Add to Favorite" button
+		const favBtn = document.createElement('button');
+		favBtn.innerText = 'Add to Favorite';
+		centerPanel.appendChild(favBtn);
+
+		centerPanel.appendChild(contentEl);
+		modalEl.empty();
+		modalEl.appendChild(leftPanel);
+		modalEl.appendChild(centerPanel);
+		modalEl.appendChild(rightPanel);
+
+		// Left panel, render history record
 		const historyTitle = document.createElement('div');
 		historyTitle.innerText = 'History';
 		leftPanel.appendChild(historyTitle);
 
 		(this.settings.history ?? []).slice(0, 20).forEach((item, idx) => {
 			const entry = document.createElement('div');
-			entry.style.display = 'flex';
-			entry.style.alignItems = 'center';
-			entry.style.marginBottom = '4px';
-			entry.innerText = `${item.find} → ${item.replace}`;
-			const useBtn = document.createElement('button');
-			useBtn.innerText = 'Use it';
-			useBtn.onclick = () => {
+			entry.addClass("item")
+			entry.innerText = `${item.find} ➡ ${item.replace}`;
+			entry.onclick = () => {
 				findInputComponent.setValue(item.find);
 				replaceWithInputComponent.setValue(item.replace);
 			};
-			entry.appendChild(useBtn);
 			leftPanel.appendChild(entry);
 		});
 
-		// Render favorite recode
+		// Right panel, render favorite record
 		const favTitle = document.createElement('div');
 		favTitle.innerText = 'Favorite';
+		favTitle.addClass("panel-title")
 		rightPanel.appendChild(favTitle);
 
 		(this.settings.favorites ?? []).slice(0, 20).forEach((item, idx) => {
 			const entry = document.createElement('div');
-			entry.style.display = 'flex';
-			entry.style.alignItems = 'center';
-			entry.style.marginBottom = '4px';
-			entry.innerText = `${item.find} → ${item.replace}`;
-			const useBtn = document.createElement('button');
-			useBtn.innerText = 'Use it';
-			useBtn.onclick = () => {
+			entry.addClass("item")
+			entry.innerText = `${item.find} ➡ ${item.replace}`;
+			entry.onclick = () => {
 				findInputComponent.setValue(item.find);
 				replaceWithInputComponent.setValue(item.replace);
 			};
-			entry.appendChild(useBtn);
 			rightPanel.appendChild(entry);
 		});
 
-		// Add "Add to History" button
-		const favBtn = document.createElement('button');
-		favBtn.innerText = 'Add to History';
+
 		favBtn.onclick = async () => {
 			const find = findInputComponent.getValue();
 			const replace = replaceWithInputComponent.getValue();
@@ -390,20 +385,26 @@ class FindAndReplaceModal extends Modal {
 				if (favs.length > 20) favs.pop();
 				this.settings.favorites = favs;
 				await this.plugin.saveData(this.settings);
-				new Notice('Added to History');
+
+				// Refresh rightPanel
+				rightPanel.innerHTML = '';
+				const favTitle = document.createElement('div');
+				favTitle.addClass("panel-title")
+				favTitle.innerText = 'Favorite';
+				rightPanel.appendChild(favTitle);
+
+				(this.settings.favorites ?? []).slice(0, 20).forEach((item, idx) => {
+					const entry = document.createElement('div');
+					entry.addClass("item")
+					entry.innerText = `${item.find} ➡ ${item.replace}`;
+					entry.onclick = () => {
+						findInputComponent.setValue(item.find);
+						replaceWithInputComponent.setValue(item.replace);
+					};
+					rightPanel.appendChild(entry);
+				});
 			}
 		};
-		centerPanel.appendChild(favBtn);
-
-		// Recognize ui
-		centerPanel.appendChild(contentEl);
-
-		mainContainer.appendChild(leftPanel);
-		mainContainer.appendChild(centerPanel);
-		mainContainer.appendChild(rightPanel);
-
-		modalEl.empty();
-		modalEl.appendChild(mainContainer);
 	}
 
 	onClose() {

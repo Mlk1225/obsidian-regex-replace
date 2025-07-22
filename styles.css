@@ -1,3 +1,11 @@
+div.modal.find-replace-modal {
+	display: flex;
+	align-items: flex-start;
+	flex-direction: row;
+	padding: 8px;
+	width: var(--dialog-max-width);
+}
+
 .find-replace-modal .modal-content .row {
 	display: flex;
 	align-items: center;
@@ -7,14 +15,14 @@
 
 
 .find-replace-modal .modal-content .row .input-label {
-    display: flex;
+	display: flex;
 	justify-content: flex-end;
 	height: 100%;
 }
 
 
 .find-replace-modal .modal-content .row .postfix-label {
-    display: flex;
+	display: flex;
 	height: 100%;
 	margin-left: 8px;
 	justify-content: flex-end;
@@ -23,7 +31,7 @@
 
 
 .find-replace-modal .modal-content .row .check-label {
-    display: flex;
+	display: flex;
 	justify-content: flex-end;
 	width: 100%;
 	height: 100%;
@@ -48,4 +56,42 @@
 .find-replace-modal .modal-content .button-wrapper {
 	justify-content: center;
 	margin-top: 16px;
+}
+
+
+.find-replace-modal .center-panel {
+	width: 50%;
+}
+
+.find-replace-modal .left-panel {
+	width: 30%;
+	margin-right: 10px;
+	overflow-y: auto;
+}
+
+.find-replace-modal .right-panel {
+	width: 30%;
+	margin-left: 10px;
+	overflow-y: auto;
+}
+
+.find-replace-modal .panel-title {
+	font-weight: bold;
+	text-align: center;
+	margin-bottom: 12px
+}
+
+.find-replace-modal .item {
+	display: flex;
+	align-items: center;
+	margin-bottom: 4px;
+	padding: 3px;
+	border: 1px solid #8A5CF5;
+	border-radius: 10px;
+	font-size: 0.9em;
+}
+
+.find-replace-modal .item:hover {
+	background-color: #8A5CF5;
+	border-radius: 10px
 }
