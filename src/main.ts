@@ -5,7 +5,6 @@ import {
 	Modal,
 	Notice,
 	Plugin,
-	TextComponent,
 	TextAreaComponent,
 	ToggleComponent,
 	PluginSettingTab,
@@ -106,7 +105,7 @@ class FindAndReplaceModal extends Modal {
 		logger('No text selected?: ' + noSelection, 9);
 
 		// Center panel
-		const addTextComponent = (label: string, placeholder: string, postfix = ''): [TextComponent, HTMLDivElement] => {
+		const addTextComponent = (label: string, placeholder: string, postfix = ''): [TextAreaComponent, HTMLDivElement] => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
 
