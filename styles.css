@@ -1,6 +1,5 @@
 div.modal.find-replace-modal {
 	display: flex;
-	align-items: flex-start;
 	flex-direction: row;
 	padding: 8px;
 	width: var(--dialog-max-width);
