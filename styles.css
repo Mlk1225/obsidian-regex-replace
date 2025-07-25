@@ -13,14 +13,12 @@ div.modal.find-replace-modal {
 	margin: 16px 0px;
 }
 
-
 .find-replace-modal .modal-content .row .input-label {
 	display: flex;
 	justify-content: flex-end;
 	height: 100%;
 	font-weight: bold;
 }
-
 
 .find-replace-modal .modal-content .row .postfix-label {
 	display: flex;
@@ -30,7 +28,6 @@ div.modal.find-replace-modal {
 	color: var(--color-base-60);
 }
 
-
 .find-replace-modal .modal-content .row .check-label {
 	display: flex;
 	justify-content: flex-end;
@@ -39,7 +36,6 @@ div.modal.find-replace-modal {
 	margin-right: 8px;
 }
 
-
 .find-replace-modal .modal-content .row .input-wrapper {
 	display: flex;
 	align-items: center;
@@ -47,7 +43,6 @@ div.modal.find-replace-modal {
 	width: 100%;
 	margin: 0;
 }
-
 
 .find-replace-modal .modal-content .row .input-wrapper input {
 	width: 100%;
@@ -85,9 +80,8 @@ div.modal.find-replace-modal {
 	overflow-y: scroll;
 }
 
-.left-panel::-webkit-scrollbar,
-.right-panel::-webkit-scrollbar {
-	/* 隐藏滚动条 */
+.find-replace-modal .left-panel::-webkit-scrollbar,
+.find-replace-modal .right-panel::-webkit-scrollbar {
 	display: none;
 }
 

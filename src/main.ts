@@ -317,8 +317,6 @@ class FindAndReplaceModal extends Modal {
 		if (noSelection) selToggleComponent.setValue(false);
 
 		// Add Container for history record and favorite record
-		const mainContainer = document.createElement('div');
-		mainContainer.style.display = 'flex';
 
 		const leftPanel = document.createElement('div');
 		leftPanel.addClass("left-panel")
