@@ -105,6 +105,35 @@ class FindAndReplaceModal extends Modal {
 		logger('No text selected?: ' + noSelection, 9);
 
 		// Center panel
+		// Center panel Top
+		const topbuttonContainerEl = document.createElement(divClass);
+		topbuttonContainerEl.addClass(rowClass);
+
+		// Add "Clean" button
+		const cleanButtonTarget = document.createElement(divClass);
+		cleanButtonTarget.addClass('button-wrapper')
+		cleanButtonTarget.addClass(rowClass)
+
+		// Add "Exchange" button
+		const exchangeButtonTarget = document.createElement(divClass);
+		exchangeButtonTarget.addClass('button-wrapper')
+		exchangeButtonTarget.addClass(rowClass)
+
+		// Add "Add to Favorite" button
+		const addfavButtonTarget = document.createElement(divClass);
+		addfavButtonTarget.addClass('button-wrapper');
+		addfavButtonTarget.addClass(rowClass);
+
+		const cleanButtonComponent = new ButtonComponent(cleanButtonTarget)
+		const exchangeButtonComponent = new ButtonComponent(exchangeButtonTarget)
+		const addfavButtonComponent = new ButtonComponent(addfavButtonTarget)
+
+		topbuttonContainerEl.appendChild(cleanButtonTarget);
+		topbuttonContainerEl.appendChild(exchangeButtonTarget);
+		topbuttonContainerEl.appendChild(addfavButtonTarget);
+		contentEl.appendChild(topbuttonContainerEl);
+
+		// Center panel Middle
 		const addTextComponent = (label: string, placeholder: string, postfix = ''): [TextAreaComponent, HTMLDivElement] => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
@@ -174,9 +203,9 @@ class FindAndReplaceModal extends Modal {
 		// Create and show selection toggle switch only if any text is selected
 		const selToggleComponent = addToggleComponent('Replace only in selection', 'If enabled, replaces only occurances in the currently selected text', noSelection);
 
-		// Create Buttons
-		const buttonContainerEl = document.createElement(divClass);
-		buttonContainerEl.addClass(rowClass);
+		// Center panel Bottom
+		const bottombuttonContainerEl = document.createElement(divClass);
+		bottombuttonContainerEl.addClass(rowClass);
 
 		const submitButtonTarget = document.createElement(divClass);
 		submitButtonTarget.addClass('button-wrapper');
@@ -309,28 +338,22 @@ class FindAndReplaceModal extends Modal {
 		}
 
 		// Add button row to dialog
-		buttonContainerEl.appendChild(submitButtonTarget);
-		buttonContainerEl.appendChild(cancelButtonTarget);
-		contentEl.appendChild(buttonContainerEl);
+		bottombuttonContainerEl.appendChild(submitButtonTarget);
+		bottombuttonContainerEl.appendChild(cancelButtonTarget);
+		contentEl.appendChild(bottombuttonContainerEl);
 
 		// If no text is selected, disable selection-toggle-switch
 		if (noSelection) selToggleComponent.setValue(false);
 
 		// Add Container for history record and favorite record
-
-		const leftPanel = document.createElement('div');
+		const leftPanel = document.createElement(divClass);
 		leftPanel.addClass("left-panel")
 
-		const centerPanel = document.createElement('div');
+		const centerPanel = document.createElement(divClass);
 		centerPanel.addClass("center-panel")
 
-		const rightPanel = document.createElement('div');
+		const rightPanel = document.createElement(divClass);
 		rightPanel.addClass("right-panel")
-
-		// Add "Add to Favorite" button
-		const favBtn = document.createElement('button');
-		favBtn.innerText = 'Add Current to Favorite';
-		centerPanel.appendChild(favBtn);
 
 		centerPanel.appendChild(contentEl);
 		modalEl.empty();
@@ -339,13 +362,13 @@ class FindAndReplaceModal extends Modal {
 		modalEl.appendChild(rightPanel);
 
 		// Left panel, render history record
-		const historyTitle = document.createElement('div');
+		const historyTitle = document.createElement(divClass);
 		historyTitle.addClass("panel-title")
 		historyTitle.innerText = 'History';
 		leftPanel.appendChild(historyTitle);
 
 		(this.settings.history ?? []).slice(0, 20).forEach((item, idx) => {
-			const entry = document.createElement('div');
+			const entry = document.createElement(divClass);
 			entry.addClass("item")
 			entry.innerText = `${item.find} ➡ ${item.replace}`;
 			entry.onclick = () => {
@@ -356,13 +379,13 @@ class FindAndReplaceModal extends Modal {
 		});
 
 		// Right panel, render favorite record
-		const favTitle = document.createElement('div');
+		const favTitle = document.createElement(divClass);
 		favTitle.innerText = 'Favorite';
 		favTitle.addClass("panel-title")
 		rightPanel.appendChild(favTitle);
 
 		(this.settings.favorites ?? []).slice(0, 20).forEach((item, idx) => {
-			const entry = document.createElement('div');
+			const entry = document.createElement(divClass);
 			entry.addClass("item")
 			entry.innerText = `${item.find} ➡ ${item.replace}`;
 			entry.onclick = () => {
@@ -372,8 +395,9 @@ class FindAndReplaceModal extends Modal {
 			rightPanel.appendChild(entry);
 		});
 
-
-		favBtn.onclick = async () => {
+		// Add button logic
+		addfavButtonComponent.setButtonText('⭐');
+		addfavButtonComponent.onClick(async () => {
 			const find = findInputComponent.getValue();
 			const replace = replaceWithInputComponent.getValue();
 			if (!find) return;
@@ -402,7 +426,22 @@ class FindAndReplaceModal extends Modal {
 					rightPanel.appendChild(entry);
 				});
 			}
-		};
+		});
+
+		exchangeButtonComponent.setButtonText('🔃');
+		exchangeButtonComponent.onClick(() => {
+			const find = findInputComponent.getValue();
+			const replace = replaceWithInputComponent.getValue();
+			findInputComponent.setValue(replace);
+			replaceWithInputComponent.setValue(find);
+		})
+
+		cleanButtonComponent.setButtonText('🗑');
+		cleanButtonComponent.onClick(() => {
+			findInputComponent.setValue("");
+			replaceWithInputComponent.setValue("");
+		})
+
 	}
 
 	onClose() {
