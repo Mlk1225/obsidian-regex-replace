@@ -104,8 +104,8 @@ class FindAndReplaceModal extends Modal {
 
 		logger('No text selected?: ' + noSelection, 9);
 
-		// Center panel
-		// Center panel Top
+		// Render Center panel
+		// Render Center panel Top
 		const topbuttonContainerEl = document.createElement(divClass);
 		topbuttonContainerEl.addClass(rowClass);
 
@@ -133,7 +133,7 @@ class FindAndReplaceModal extends Modal {
 		topbuttonContainerEl.appendChild(addfavButtonTarget);
 		contentEl.appendChild(topbuttonContainerEl);
 
-		// Center panel Middle
+		// Render Center panel Middle
 		const addTextComponent = (label: string, placeholder: string, postfix = ''): [TextAreaComponent, HTMLDivElement] => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
@@ -203,7 +203,7 @@ class FindAndReplaceModal extends Modal {
 		// Create and show selection toggle switch only if any text is selected
 		const selToggleComponent = addToggleComponent('Replace only in selection', 'If enabled, replaces only occurances in the currently selected text', noSelection);
 
-		// Center panel Bottom
+		// Render Center panel Bottom
 		const bottombuttonContainerEl = document.createElement(divClass);
 		bottombuttonContainerEl.addClass(rowClass);
 
@@ -294,7 +294,7 @@ class FindAndReplaceModal extends Modal {
 				let nrOfHits = 0;
 				if (!selToggleComponent.getValue()) {
 					logger('   SCOPE: Full document', 9);
-					scope = 'selection'
+					scope = 'document'
 					const documentText = editor.getValue();
 					const documentSplit = documentText.split(searchString);
 					nrOfHits = documentSplit.length - 1;
@@ -302,7 +302,7 @@ class FindAndReplaceModal extends Modal {
 				}
 				else {
 					logger('   SCOPE: Selection', 9);
-					scope = 'document';
+					scope = 'selection';
 					const selectedSplit = selectedText.split(searchString);
 					nrOfHits = selectedSplit.length - 1;
 					editor.replaceSelection(selectedSplit.join(replaceString));
@@ -310,7 +310,7 @@ class FindAndReplaceModal extends Modal {
 				resultString = `Made ${nrOfHits} replacement(s) in ${scope}`;
 			}
 
-			// Saving settings (find/replace text and toggle switch states)
+			// Save settings (find/replace text and toggle switch states)
 			this.settings.findText = searchString;
 			this.settings.replaceText = replaceString;
 			this.settings.useRegEx = regToggleComponent.getValue();
@@ -331,69 +331,104 @@ class FindAndReplaceModal extends Modal {
 			logger('Found selection without linebreaks and option is enabled -> fill', 9);
 			findInputComponent.setValue(editor.getSelection());
 			selToggleComponent.setValue(false);
-		}
-		else {
+
+			// Auto-focus on Find field
+			setTimeout(() => {
+				findInputComponent.inputEl.focus();
+				findInputComponent.inputEl.select();
+			}, 0);
+		} else {
 			logger('Restore find text', 9);
 			findInputComponent.setValue(this.settings.findText);
+
+			setTimeout(() => {
+				findInputComponent.inputEl.focus();
+			}, 0);
 		}
+
+		// If no text is selected, disable selection-toggle-switch
+		if (noSelection) selToggleComponent.setValue(false);
 
 		// Add button row to dialog
 		bottombuttonContainerEl.appendChild(submitButtonTarget);
 		bottombuttonContainerEl.appendChild(cancelButtonTarget);
 		contentEl.appendChild(bottombuttonContainerEl);
 
-		// If no text is selected, disable selection-toggle-switch
-		if (noSelection) selToggleComponent.setValue(false);
+		// Render Left Panel & Right Panel: Add Container for history record and favorite record
+		// refreshPanels: render history panel or favorites panel
+		const refreshPanels = (panel: HTMLElement, type: 'history' | 'favorites', findInputComponent: TextAreaComponent, replaceWithInputComponent: TextAreaComponent): void => {
 
-		// Add Container for history record and favorite record
+			panel.innerHTML = '';
+
+			const title = document.createElement('div');
+			title.className = "panel-title";
+			title.innerText = type.charAt(0).toUpperCase() + type.slice(1);  // 'History' 或 'Favorite'
+			panel.appendChild(title);
+
+			const items = (this.settings[type] ?? []).slice(0, 20);
+
+			items.forEach((item, idx) => {
+				const entry = document.createElement('div');
+				entry.className = "item";
+				entry.innerText = `${item.find} ➡ ${item.replace}`;
+
+				// Double right click to delete one entry
+				entry.onclick = (e) => {
+					if (entry.classList.contains('delete-mode')) {
+						// left click after right click to cancel
+						entry.classList.remove('delete-mode');
+						delete entry.dataset.markedIdx;
+						const deleteSpan = entry.querySelector('span');
+						if (deleteSpan) deleteSpan.remove();
+					} else {
+						// one left click to use entry
+						findInputComponent.setValue(item.find);
+						replaceWithInputComponent.setValue(item.replace);
+					}
+				};
+
+				entry.addEventListener('contextmenu', (e) => {
+					e.preventDefault();
+					const markedIdx = parseInt(entry.dataset.markedIdx || '-1');
+					if (markedIdx >= 0 && markedIdx === idx) {
+						// right click after right click to confirm deletion
+						this.settings[type].splice(idx, 1);
+						this.plugin.saveData(this.settings);
+						refreshPanels(panel, type, findInputComponent, replaceWithInputComponent);
+					} else {
+						// one right click to enquire deletion
+						entry.classList.add('delete-mode');
+						entry.dataset.markedIdx = idx.toString();
+						const deleteSpan = document.createElement('span');
+						deleteSpan.innerText = ' DELETE IT?';
+						deleteSpan.style.color = 'red';
+						deleteSpan.style.fontSize = '0.9em';
+						deleteSpan.style.fontWeight = 'bold';
+						entry.appendChild(deleteSpan);
+					}
+				});
+
+				panel.appendChild(entry);
+			});
+		};
+
+		// Add left panel and right panel to modal
 		const leftPanel = document.createElement(divClass);
 		leftPanel.addClass("left-panel")
+		refreshPanels(leftPanel, 'history', findInputComponent, replaceWithInputComponent);
 
 		const centerPanel = document.createElement(divClass);
 		centerPanel.addClass("center-panel")
 
 		const rightPanel = document.createElement(divClass);
 		rightPanel.addClass("right-panel")
+		refreshPanels(rightPanel, 'favorites', findInputComponent, replaceWithInputComponent);
 
 		centerPanel.appendChild(contentEl);
 		modalEl.empty();
 		modalEl.appendChild(leftPanel);
 		modalEl.appendChild(centerPanel);
 		modalEl.appendChild(rightPanel);
-
-		// Left panel, render history record
-		const historyTitle = document.createElement(divClass);
-		historyTitle.addClass("panel-title")
-		historyTitle.innerText = 'History';
-		leftPanel.appendChild(historyTitle);
-
-		(this.settings.history ?? []).slice(0, 20).forEach((item, idx) => {
-			const entry = document.createElement(divClass);
-			entry.addClass("item")
-			entry.innerText = `${item.find} ➡ ${item.replace}`;
-			entry.onclick = () => {
-				findInputComponent.setValue(item.find);
-				replaceWithInputComponent.setValue(item.replace);
-			};
-			leftPanel.appendChild(entry);
-		});
-
-		// Right panel, render favorite record
-		const favTitle = document.createElement(divClass);
-		favTitle.innerText = 'Favorite';
-		favTitle.addClass("panel-title")
-		rightPanel.appendChild(favTitle);
-
-		(this.settings.favorites ?? []).slice(0, 20).forEach((item, idx) => {
-			const entry = document.createElement(divClass);
-			entry.addClass("item")
-			entry.innerText = `${item.find} ➡ ${item.replace}`;
-			entry.onclick = () => {
-				findInputComponent.setValue(item.find);
-				replaceWithInputComponent.setValue(item.replace);
-			};
-			rightPanel.appendChild(entry);
-		});
 
 		// Add button logic
 		addfavButtonComponent.setButtonText('⭐');
@@ -407,25 +442,8 @@ class FindAndReplaceModal extends Modal {
 				if (favs.length > 20) favs.pop();
 				this.settings.favorites = favs;
 				await this.plugin.saveData(this.settings);
-
-				// Refresh rightPanel
-				rightPanel.innerHTML = '';
-				const favTitle = document.createElement('div');
-				favTitle.addClass("panel-title")
-				favTitle.innerText = 'Favorite';
-				rightPanel.appendChild(favTitle);
-
-				(this.settings.favorites ?? []).slice(0, 20).forEach((item, idx) => {
-					const entry = document.createElement('div');
-					entry.addClass("item")
-					entry.innerText = `${item.find} ➡ ${item.replace}`;
-					entry.onclick = () => {
-						findInputComponent.setValue(item.find);
-						replaceWithInputComponent.setValue(item.replace);
-					};
-					rightPanel.appendChild(entry);
-				});
 			}
+			refreshPanels(rightPanel, 'favorites', findInputComponent, replaceWithInputComponent);
 		});
 
 		exchangeButtonComponent.setButtonText('🔃');
